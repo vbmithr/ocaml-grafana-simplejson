@@ -1,0 +1,5 @@
+(library
+ (name            simplejson)
+ (public_name     simplejson)
+ (preprocess (pps ppx_sexp_conv))
+ (libraries       sexplib ptime ocplib-json-typed))
