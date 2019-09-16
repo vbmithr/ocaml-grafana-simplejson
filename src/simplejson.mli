@@ -2,13 +2,13 @@ module Query : sig
   type t = {
     requestId: string option;
     timezone: string option;
-    panelId: int;
+    panelId: string;
     dashboardId: int option;
     range: range;
     interval: Ptime.Span.t;
     targets: target list;
     maxDataPoints: int;
-    startTime: Ptime.t;
+    startTime: Ptime.t option;
     adhocFilters: adhocFilter list;
   } [@@deriving sexp]
   and range = {
@@ -32,5 +32,6 @@ module Query : sig
 end
 
 module Search : sig
-  val request_encoding : string Json_encoding.encoding
+  type t = string [@@deriving sexp]
+  val request_encoding : t Json_encoding.encoding
 end

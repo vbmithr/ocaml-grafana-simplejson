@@ -27,13 +27,13 @@ module Query = struct
   type t = {
     requestId: string option;
     timezone: string option;
-    panelId: int;
+    panelId: string;
     dashboardId: int option;
     range: range;
     interval: Ptime.Span.t;
     targets: target list;
     maxDataPoints: int;
-    startTime: Ptime.t;
+    startTime: Ptime.t option;
     adhocFilters: adhocFilter list;
   } [@@deriving sexp]
   and range = {
@@ -105,7 +105,7 @@ module Query = struct
       (fun { name; refId; typ } -> (name, refId, typ))
       (fun (name, refId, typ) -> { name; refId; typ })
       (obj3
-         (opt "name" string)
+         (opt "target" string)
          (req "refId" string)
          (req "type" targetType))
 
@@ -118,30 +118,37 @@ module Query = struct
          (req "key" string)
          (req "value" string))
 
+  let stringint =
+    union [
+      case string (fun a -> Some a) (fun a -> a) ;
+      case int53 Int64.of_string_opt Int64.to_string ;
+    ]
+
   let t_ =
     conv
       (fun ({ requestId; timezone; panelId; dashboardId;
               range; interval; targets;
               maxDataPoints; startTime; adhocFilters }:t) ->
-        requestId, timezone, panelId, dashboardId,
+        requestId, timezone, panelId, Some dashboardId,
         range, interval, targets,
         maxDataPoints, startTime, adhocFilters)
       (fun (requestId, timezone, panelId, dashboardId,
         range, interval, targets,
             maxDataPoints, startTime, adhocFilters) ->
+        let dashboardId = Option.value dashboardId ~default:None in
         { requestId; timezone; panelId; dashboardId;
           range; interval; targets;
           maxDataPoints; startTime; adhocFilters } )
       (obj10
          (opt "requestId" string)
          (opt "timezone" string)
-         (req "panelId" int)
-         (req "dashboardId" (option int))
+         (req "panelId" stringint)
+         (opt "dashboardId" (option int))
          (req "range" range)
          (req "intervalMs" spanms)
          (req "targets" (list target))
          (req "maxDataPoints" int)
-         (req "startTime" unixtime)
+         (opt "startTime" unixtime)
          (req "adhocFilters" (list adhocFilter)))
 
   let t =
@@ -149,6 +156,7 @@ module Query = struct
 end
 
 module Search = struct
+  type t = string [@@deriving sexp]
   let request_encoding =
     let open Json_encoding in
     conv (fun s -> s) (fun s -> s) (obj1 (req "target" string))
