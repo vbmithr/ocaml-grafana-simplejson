@@ -23,6 +23,76 @@ module Ptime = struct
     sexp_of_string (to_rfc3339 ~frac_s:3 t)
 end
 
+module Table = struct
+  type 'a t =
+    | Nil : unit t
+    | Cons : 'a col * 'b t -> ('a * 'b) t
+    | Conv : ('a -> 'b) * ('b -> 'a) * 'b t -> 'a t
+
+  and 'a col = {
+    label: string;
+    typ: 'a typ
+  }
+
+  and 'a typ =
+    | Time : Ptime.t list typ
+    | String : string list typ
+    | Int : int list typ
+    | Int32 : int32 list typ
+    | Int64 : int64 list typ
+    | Float : float list typ
+
+  let string_of_typ : type a. a typ -> string = function
+    | Time -> "time"
+    | String -> "string"
+    | _ -> "number"
+
+  let json_of_typ_v : type a. a typ -> a -> Json_repr.ezjsonm =
+    fun typ v -> match typ with
+      | Time -> `A (List.map (fun v -> `Float (Ptime.to_float_s v)) v)
+      | String -> `A (List.map (fun v -> `String v) v)
+      | Int -> `A (List.map (fun v -> `Float (Int.to_float v)) v)
+      | Int32 -> `A (List.map (fun v -> `Float (Int32.to_float v)) v)
+      | Int64 -> `A (List.map (fun v -> `Float (Int64.to_float v)) v)
+      | Float -> `A (List.map (fun v -> `Float v) v)
+
+  let time ~label = { label; typ = Time }
+  let string ~label = { label; typ = String }
+  let int ~label = { label; typ = Int }
+  let int32 ~label = { label; typ = Int32 }
+  let int64 ~label = { label; typ = Int64 }
+  let float ~label = { label; typ = Float }
+
+  let conv proj inj col = Conv (proj, inj, col)
+
+  let t0 = Nil
+  let t1 c1 =
+    conv (fun t -> (t, ())) (fun (t, ()) -> t) (Cons (c1, Nil))
+  let t2 c1 c2 =
+    conv (fun (t1, t2) -> (t1, (t2, ()))) (fun (t1, (t2, ())) -> t1, t2) (Cons (c1, (Cons (c2, Nil))))
+  let t3 c1 c2 c3 =
+    conv (fun (t1, t2, t3) -> (t1, (t2, (t3, ())))) (fun (t1, (t2, (t3, ()))) -> t1, t2, t3) (Cons (c1, (Cons (c2, (Cons (c3, Nil))))))
+
+  let rec construct :
+    type a. a t -> a -> Json_repr.ezjsonm list * Json_repr.ezjsonm list = fun a b ->
+    match a, b with
+    | Conv (p, _, w), _ -> construct w (p b)
+    | Nil, _ -> [], []
+    | Cons ({ label; typ }, b), (va, vb) ->
+      let a, b = construct b vb in
+      `O ["text", `String label;
+          "type", `String (string_of_typ typ)] :: a,
+      json_of_typ_v typ va :: b
+
+  let construct a b =
+    let t, v = construct a b in
+    `O [
+      "type", `String "table";
+      "columns", `A t;
+      "rows", `A v
+    ]
+end
+
 module Query = struct
   type t = {
     requestId: string option;

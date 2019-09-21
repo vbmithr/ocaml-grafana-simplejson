@@ -1,3 +1,22 @@
+module Table : sig
+  type 'a t
+  type 'a col
+
+  val time : label:string -> Ptime.t list col
+  val string : label:string -> string list col
+  val int : label:string -> int list col
+  val int32 : label:string -> int32 list col
+  val int64 : label:string -> int64 list col
+  val float : label:string -> float list col
+
+  val t0 : unit t
+  val t1: 'a col -> 'a t
+  val t2: 'a col -> 'b col -> ('a * 'b) t
+  val t3: 'a col -> 'b col -> 'c col -> ('a * 'b * 'c) t
+
+  val construct : 'a t -> 'a -> Json_repr.ezjsonm
+end
+
 module Query : sig
   type t = {
     requestId: string option;
