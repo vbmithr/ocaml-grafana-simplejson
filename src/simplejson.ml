@@ -156,8 +156,13 @@ module Query = struct
 end
 
 module Search = struct
-  type t = string [@@deriving sexp]
+  type request = string [@@deriving sexp]
+  type response = string list [@@deriving sexp]
+
+  open Json_encoding
+
   let request_encoding =
-    let open Json_encoding in
     conv (fun s -> s) (fun s -> s) (obj1 (req "target" string))
+
+  let response_encoding = list string
 end

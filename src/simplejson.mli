@@ -32,6 +32,8 @@ module Query : sig
 end
 
 module Search : sig
-  type t = string [@@deriving sexp]
-  val request_encoding : t Json_encoding.encoding
+  type request = string [@@deriving sexp]
+  type response = string list [@@deriving sexp]
+  val request_encoding : request Json_encoding.encoding
+  val response_encoding : response Json_encoding.encoding
 end
