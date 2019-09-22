@@ -47,14 +47,22 @@ module Table = struct
     | String -> "string"
     | _ -> "number"
 
-  let json_of_typ_v : type a. a typ -> a -> Json_repr.ezjsonm =
+  let json_of_typ_v : type a. a typ -> a -> Json_repr.ezjsonm list =
     fun typ v -> match typ with
-      | Time -> `A (List.map (fun v -> `Float (Ptime.to_float_s v)) v)
-      | String -> `A (List.map (fun v -> `String v) v)
-      | Int -> `A (List.map (fun v -> `Float (Int.to_float v)) v)
-      | Int32 -> `A (List.map (fun v -> `Float (Int32.to_float v)) v)
-      | Int64 -> `A (List.map (fun v -> `Float (Int64.to_float v)) v)
-      | Float -> `A (List.map (fun v -> `Float v) v)
+      | Time -> List.map (fun v -> `Float (Ptime.to_float_s v)) v
+      | String -> List.map (fun v -> `String v) v
+      | Int -> List.map (fun v -> `Float (Int.to_float v)) v
+      | Int32 -> List.map (fun v -> `Float (Int32.to_float v)) v
+      | Int64 -> List.map (fun v -> `Float (Int64.to_float v)) v
+      | Float -> List.map (fun v -> `Float v) v
+
+  let flip ls =
+    let rec inner acc ls =
+      match ls with
+      | [] -> []
+      | [] :: _ -> List.rev acc
+      | _ -> inner (List.(map hd ls) :: acc) List.(map tl ls) in
+    inner [] ls
 
   let time ~label = { label; typ = Time }
   let string ~label = { label; typ = String }
@@ -74,7 +82,7 @@ module Table = struct
     conv (fun (t1, t2, t3) -> (t1, (t2, (t3, ())))) (fun (t1, (t2, (t3, ()))) -> t1, t2, t3) (Cons (c1, (Cons (c2, (Cons (c3, Nil))))))
 
   let rec construct :
-    type a. a t -> a -> Json_repr.ezjsonm list * Json_repr.ezjsonm list = fun a b ->
+    type a. a t -> a -> Json_repr.ezjsonm list * Json_repr.ezjsonm list list = fun a b ->
     match a, b with
     | Conv (p, _, w), _ -> construct w (p b)
     | Nil, _ -> [], []
@@ -89,7 +97,7 @@ module Table = struct
     `O [
       "type", `String "table";
       "columns", `A t;
-      "rows", `A v
+      "rows", `A (List.map (fun a -> `A a) (flip v))
     ]
 end
 
