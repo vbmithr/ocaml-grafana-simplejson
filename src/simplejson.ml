@@ -244,3 +244,16 @@ module Search = struct
 
   let response_encoding = list string
 end
+
+module Tag = struct
+  open Json_encoding
+
+  let key_response =
+    list @@ conv (fun s -> (), s) (fun ((), s) -> s)
+      (obj2
+         (req "type" (constant "string"))
+         (req "text" string))
+
+  let value_request = obj1 (req "key" string)
+  let value_response = list (obj1 (req "text" string))
+end

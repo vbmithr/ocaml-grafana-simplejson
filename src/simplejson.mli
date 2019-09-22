@@ -56,3 +56,9 @@ module Search : sig
   val request_encoding : request Json_encoding.encoding
   val response_encoding : response Json_encoding.encoding
 end
+
+module Tag : sig
+  val key_response : string list Json_encoding.encoding
+  val value_request : string Json_encoding.encoding
+  val value_response : string list Json_encoding.encoding
+end
