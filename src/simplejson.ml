@@ -189,12 +189,13 @@ module Query = struct
 
   let adhocFilter =
     conv
-      (fun { op ; key ; value } -> (op, key, value))
-      (fun (op, key, value) -> { op ; key ; value })
-      (obj3
-         (req "op" op)
+      (fun { op ; key ; value } -> (op, key, value, None))
+      (fun (op, key, value, _) -> { op ; key ; value })
+      (obj4
+         (req "operator" op)
          (req "key" string)
-         (req "value" string))
+         (req "value" string)
+         (opt "condition" (constant "AND")))
 
   let stringint =
     union [
