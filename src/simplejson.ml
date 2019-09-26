@@ -21,6 +21,14 @@ module Ptime = struct
 
   let sexp_of_t t =
     sexp_of_string (to_rfc3339 ~frac_s:3 t)
+
+  open Json_encoding
+
+  let ms_encoding =
+    conv
+      (fun t -> Int64.of_float (Ptime.to_float_s t *. 1e3))
+      (fun i -> Option.get (Ptime.of_float_s (Int64.to_float i /. 1e3)))
+      int53
 end
 
 module Table = struct
@@ -99,6 +107,35 @@ module Table = struct
       "columns", `A t;
       "rows", `A (List.map (fun a -> `A a) (flip v))
     ]
+end
+
+module Timeserie = struct
+  type 'a t = {
+    name: string;
+    ks: Ptime.t list;
+    vs: 'a list;
+  }
+
+  let create name ks vs =
+    if List.length ks <> List.length vs then
+      invalid_arg "Timeserie.create" ;
+    { name ; ks ; vs }
+
+  open Json_encoding
+
+  let datapoint_encoding e =
+    tup2 e Ptime.ms_encoding
+
+  let encoding e =
+    conv
+      (fun { name ; ks ; vs } -> name, List.map2 (fun k v -> (v, k)) ks vs)
+      (fun (name, ksvs) ->
+         let vs = List.map fst ksvs in
+         let ks = List.map snd ksvs in
+         { name; ks; vs })
+      (obj2
+         (req "target" string)
+         (req "datapoints" (list (datapoint_encoding e))))
 end
 
 module Query = struct

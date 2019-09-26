@@ -17,6 +17,13 @@ module Table : sig
   val construct : 'a t -> 'a -> Json_repr.ezjsonm
 end
 
+module Timeserie : sig
+  type 'a t
+
+  val create : string -> Ptime.t list -> 'a list -> 'a t
+  val encoding : 'a Json_encoding.encoding -> 'a t Json_encoding.encoding
+end
+
 module Query : sig
   type t = {
     requestId: string option;
