@@ -122,6 +122,7 @@ module Query = struct
     name: string option;
     refId: string;
     typ: targetType;
+    hide: bool;
   }
   and targetType = Timeserie | Table
   and adhocFilter = {
@@ -180,12 +181,13 @@ module Query = struct
 
   let target =
     conv
-      (fun { name; refId; typ } -> (name, refId, typ))
-      (fun (name, refId, typ) -> { name; refId; typ })
-      (obj3
+      (fun { name; refId; typ; hide } -> (name, refId, typ, hide))
+      (fun (name, refId, typ, hide) -> { name; refId; typ; hide })
+      (obj4
          (opt "target" string)
          (req "refId" string)
-         (req "type" targetType))
+         (req "type" targetType)
+         (dft "hide" bool true))
 
   let adhocFilter =
     conv

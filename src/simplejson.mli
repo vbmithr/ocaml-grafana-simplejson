@@ -38,6 +38,7 @@ module Query : sig
     name: string option;
     refId: string;
     typ: targetType;
+    hide: bool;
   }
   and targetType = Timeserie | Table
   and adhocFilter = {
