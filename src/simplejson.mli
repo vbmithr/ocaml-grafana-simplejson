@@ -49,6 +49,8 @@ module Query : sig
   and op = Eq | Neq | Gt | Lt | Geq | Leq
 
   val t : t Json_encoding.encoding
+
+  val find_adhoc : adhocFilter list -> op -> string -> string list
 end
 
 module Search : sig

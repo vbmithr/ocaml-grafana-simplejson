@@ -234,6 +234,10 @@ module Query = struct
 
   let t =
     conv (fun t -> (), t) (fun ((), t) -> t) (merge_objs unit t_)
+
+  let find_adhoc fs op k =
+    List.fold_left (fun a { op = op'; key ; value } ->
+        if op = op' && k = key then value :: a else a) [] fs
 end
 
 module Search = struct
